@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8
- 
-import os
+# -*- coding: utf-8 -*-
 import tkinter as tk 
 import tkinter.filedialog as fdg
 from affichagecomparaison import Comparaison
+from PIL import Image, ImageTk
 
 class Entreejeu(tk.Frame):
     
@@ -13,13 +11,17 @@ class Entreejeu(tk.Frame):
         self.grid()
         self.setmenu()
         self.setwidgets()
+        self.database=[]
         
         
         
     def add(self):          
         
-        filepath = fdg.askopenfilename(title = "Selectionez une image", filetypes = [('png files','.png'),('all files','.*')])        
-        self.liste.insert(tk.END,self.selectionfin(filepath))
+        filepath = fdg.askopenfilename(title = "Selectionnez une image", filetypes = [('all files','.*')])       
+        print(self.database) 
+        if (filepath not in self.database):
+            self.database.append(filepath)
+            self.liste.insert(tk.END,self.selectionfin(filepath))
         
         
     def run(self):
@@ -38,48 +40,38 @@ class Entreejeu(tk.Frame):
             fenetre3.geometry('400x600')
             fenetre3.resizable(width=False, height=False)
             listedonnes = list(self.liste.get(0, tk.END))        
-            selection=self.liste.get(self.liste.curselection())
+            selection=self.database[self.liste.curselection()[0]]
             affichagedonnes=Comparaison(listedonnes,selection,master=fenetre3)
             affichagedonnes.mainloop()
             
-            
-
+     
+        
     def delete(self):
-        print("element supprime est le suivant")
-        print(self.liste.curselection())
-        for i in self.liste.curselection():
-            self.liste.delete(i)
+        
+        
+        selection=self.liste.curselection()
+        iteration=0
+        #fonction pour s'assurer den pas sortir de la selection
+        for i in range(len(selection)):      
+            self.liste.delete(selection[i]-iteration)
+            del self.database[selection[i]-iteration]
+            iteration+=1
                
     def reset(self):
         self.liste.delete(0, tk.END)
-        print(tk.END)
-
-    def read_db(self):
-    #Variable du repertoire A REMPLACER !
-        self.path = '/home/cdelgadodi/Documents/Projet/Empreintes/Noir-blanc/600ppp/'
-    #Liste vide pour inclure tous les fichiers
-        self.lstFiles = []
-    #Liste avec tous les fichiers du repertoire:
-        self.lstDir = os.walk(path)   #os.walk()Liste repertoires et fichiers
-    #CRee une liste des fichiers bmp qui existent dans le repertoire et les inclut dans la liste.
-        for root, dirs, files in lstDir:
-            for fichier in files:
-                (nomFichier, extension) = os.path.splitext(fichier)
-                if(extension == ".bmp"):
-                    lstFiles.append(nomFichier+extension)
-                #print (nomFichier + extension)
-        print(lstFiles)            
-        print "taille de la liste = ", len(lstFiles)
-        return lstFiles
-
-    def algo(self, s1):
-    for img in read_db():
-        if self.s1 == img:
-            print self.s1 + " avec " + img
-            print True
-        else:
-            print self.s1 + " avec " + img
-            print False
+        del(self.database[:])
+        
+    def load(self):
+        with open("fingerprint.txt", "r") as fichierempreintedigitale:
+            data=fichierempreintedigitale.readlines()
+            
+            for ligne in data:               
+                if (ligne not in self.database):                                        
+                    self.database.append(ligne[0:len(ligne)-1])
+                    self.liste.insert(tk.END,self.selectionfin(ligne))
+                    
+            print("database après load")
+            print(self.database)
         
     def compare(self):
         print("la taille est de")
@@ -94,10 +86,20 @@ class Entreejeu(tk.Frame):
               fenetre2.mainloop()
         else:
             
-            self.image1=tk.PhotoImage(file =self.liste.get(self.liste.curselection()[0]))
-            self.image2=tk.PhotoImage(file =self.liste.get(self.liste.curselection()[1]))
-            self.item1 = self.can1.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.image1)
-            self.item2 = self.can2.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.image2)        
+            #☻self.image1=tk.PhotoImage(file =self.database[self.liste.curselection()[0]])
+           # self.image2=tk.PhotoImage(file =self.database[self.liste.curselection()[1]])
+            self.image1 = Image.open(self.database[self.liste.curselection()[0]])
+            largeur=(int)(self.can1.cget('width'))
+            hauteur=(int)(self.can1.cget('height'))
+            self.image1.resize((largeur,hauteur))            
+            self.photo1 = ImageTk.PhotoImage(self.image1)            
+            
+            self.image2 = Image.open(self.database[self.liste.curselection()[1]])
+            self.image2.resize((largeur,hauteur)) 
+            self.photo2 = ImageTk.PhotoImage(self.image2)           
+            
+            self.item1 = self.can1.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.photo1)
+            self.item2 = self.can2.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.photo2)        
        
     def setwidgets(self):
         # Création de nos widgets
@@ -130,9 +132,34 @@ class Entreejeu(tk.Frame):
         self.b5.grid(row = 2, column = 3,padx =5)
     
     def save(self):
-        fichierempreintedigitale = open("fingerprint.txt", "a")
+        #verification pour ne pas ajouter denouveaux fichiers
         
-        fichierempreintedigitale.close()
+        with open("fingerprint.txt", "r") as fichierempreintedigitale:
+            data=fichierempreintedigitale.readlines()
+        base=[]
+        for ligne in data:
+                print(ligne)            
+                base.append(ligne)
+        print("le contenu du fichier avant est\n")
+        print(base)
+                         
+        with open("fingerprint.txt", "a") as fichierempreintedigitale:
+            for index, item in enumerate(self.database):
+                if item not in base:
+                    fichierempreintedigitale.write(item+"\n")  
+                    
+        with open("fingerprint.txt", "r") as fichierempreintedigitale:
+            data=fichierempreintedigitale.readlines()
+        base=[]
+        for ligne in data:
+                print(ligne)            
+                base.append(ligne)
+        print("le contenu du fichier après est\n")
+        print(base)
+        
+    def erase(self):
+        with open("fingerprint.txt", "w") as fichierempreintedigitale:            
+                fichierempreintedigitale.write("") 
     
     def setmenu(self):
         self.menubar = tk.Menu(self)
@@ -148,12 +175,14 @@ class Entreejeu(tk.Frame):
         self.menubar.add_cascade(label="fichier", menu=self.menu2)        
         self.menu2.add_command(label="quit", command=self.master.destroy)
         self.menu2.add_command(label="save", command=self.save)
-        
+        self.menu2.add_command(label="load", command=self.load)
+        self.menu2.add_command(label="erase", command=self.erase)
         
         self.master.config(menu=self.menubar)
         
     def selectionfin(self,filename):                
         b=filename.split("/")
+        #return os.path.basename(filename) 
         return (b[len(b)-1])
 
       
