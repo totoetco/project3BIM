@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# -*- coding: utf-8
+ 
+import os
 import tkinter as tk 
 import tkinter.filedialog as fdg
 from affichagecomparaison import Comparaison
@@ -50,6 +53,33 @@ class Entreejeu(tk.Frame):
     def reset(self):
         self.liste.delete(0, tk.END)
         print(tk.END)
+
+    def read_db(self):
+    #Variable du repertoire A REMPLACER !
+        self.path = '/home/cdelgadodi/Documents/Projet/Empreintes/Noir-blanc/600ppp/'
+    #Liste vide pour inclure tous les fichiers
+        self.lstFiles = []
+    #Liste avec tous les fichiers du repertoire:
+        self.lstDir = os.walk(path)   #os.walk()Liste repertoires et fichiers
+    #CRee une liste des fichiers bmp qui existent dans le repertoire et les inclut dans la liste.
+        for root, dirs, files in lstDir:
+            for fichier in files:
+                (nomFichier, extension) = os.path.splitext(fichier)
+                if(extension == ".bmp"):
+                    lstFiles.append(nomFichier+extension)
+                #print (nomFichier + extension)
+        print(lstFiles)            
+        print "taille de la liste = ", len(lstFiles)
+        return lstFiles
+
+    def algo(self, s1):
+    for img in read_db():
+        if self.s1 == img:
+            print self.s1 + " avec " + img
+            print True
+        else:
+            print self.s1 + " avec " + img
+            print False
         
     def compare(self):
         print("la taille est de")
