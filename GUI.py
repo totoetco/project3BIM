@@ -3,6 +3,9 @@ import tkinter as tk
 import tkinter.filedialog as fdg
 from affichagecomparaison import Comparaison
 from PIL import Image, ImageTk
+import time
+import random
+
 
 class Entreejeu(tk.Frame):
     
@@ -12,14 +15,16 @@ class Entreejeu(tk.Frame):
         self.setmenu()
         self.setwidgets()
         self.database=[]
+        self.photoavant=True
+        self.arret=True
         
         
         
     def add(self):          
         
         filepath = fdg.askopenfilename(title = "Selectionnez une image", filetypes = [('all files','.*')])       
-        print(self.database) 
-        if (filepath not in self.database):
+         
+        if (filepath not in self.database and len(filepath)!=0):
             self.database.append(filepath)
             self.liste.insert(tk.END,self.selectionfin(filepath))
         
@@ -59,7 +64,11 @@ class Entreejeu(tk.Frame):
                
     def reset(self):
         self.liste.delete(0, tk.END)
-        del(self.database[:])
+        del(self.database[:])        
+        self.Arreter()               
+                
+        self.can1.delete(tk.ALL)
+        self.can2.delete(tk.ALL)
         
     def load(self):
         with open("fingerprint.txt", "r") as fichierempreintedigitale:
@@ -70,12 +79,10 @@ class Entreejeu(tk.Frame):
                     self.database.append(ligne[0:len(ligne)-1])
                     self.liste.insert(tk.END,self.selectionfin(ligne))
                     
-            print("database après load")
-            print(self.database)
+            
         
     def compare(self):
-        print("la taille est de")
-        print(self.liste.size())
+       
         
         if (len(self.liste.curselection())!=2):
               fenetre2=tk.Toplevel()      
@@ -140,8 +147,7 @@ class Entreejeu(tk.Frame):
         for ligne in data:
                 print(ligne)            
                 base.append(ligne)
-        print("le contenu du fichier avant est\n")
-        print(base)
+        
                          
         with open("fingerprint.txt", "a") as fichierempreintedigitale:
             for index, item in enumerate(self.database):
@@ -154,8 +160,7 @@ class Entreejeu(tk.Frame):
         for ligne in data:
                 print(ligne)            
                 base.append(ligne)
-        print("le contenu du fichier après est\n")
-        print(base)
+        
         
     def erase(self):
         with open("fingerprint.txt", "w") as fichierempreintedigitale:            
@@ -178,12 +183,46 @@ class Entreejeu(tk.Frame):
         self.menu2.add_command(label="load", command=self.load)
         self.menu2.add_command(label="erase", command=self.erase)
         
+        self.menu3 = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="animate", menu=self.menu3)        
+        self.menu3.add_command(label="start", command=self.Demarrer)
+        self.menu3.add_command(label="stop", command=self.Arreter)        
+        
         self.master.config(menu=self.menubar)
         
     def selectionfin(self,filename):                
         b=filename.split("/")
         #return os.path.basename(filename) 
         return (b[len(b)-1])
+    
+    def Arreter(self):
+        
+        self.arret = True
+
+    def Demarrer(self):    
+        
+        self.can1.delete(tk.ALL)                       
+        
+        if self.arret == True:
+            self.arret = False
+            self.animepictures()
+    
+    def animepictures(self):
+        if self.arret == False:          
+            self.after(4000,self.animepictures)    
+        
+        self.photoavant=not(self.photoavant)
+        self.can1.delete(tk.ALL) 
+        if (self.photoavant):            
+            self.item1 = self.can1.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.photo1)
+        else:
+            self.item2 = self.can1.create_image((int)(self.can1.cget('width'))/2, (int)(self.can1.cget('height'))/2, image =self.photo2)
+        
+        
+       
+        
+            
+            
 
       
         
@@ -191,6 +230,8 @@ fenetre = tk.Tk()
 fenetre.title("SYSTEME DE RECONNAISSANCE D'EMPREINTES DIGITALES")
 fenetre.geometry('1000x400')
 fenetre.resizable(width=False, height=False)
+Arret=True
 debutjeu=Entreejeu(master=fenetre)
+
 
 debutjeu.mainloop()
